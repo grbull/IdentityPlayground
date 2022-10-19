@@ -3,8 +3,16 @@
 using System.Text.Json;
 using IdentityModel.Client;
 
-var client = new HttpClient();
-var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5001");
+var handler = new HttpClientHandler();
+handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+handler.ServerCertificateCustomValidationCallback = 
+    (httpRequestMessage, cert, cetChain, policyErrors) =>
+    {
+        return true;
+    };
+
+var client = new HttpClient(handler);
+var disco = await client.GetDiscoveryDocumentAsync("http://localhost:5000");
 if (disco.IsError)
 {
     Console.WriteLine(disco.Error);
@@ -30,10 +38,17 @@ if (tokenResponse.IsError)
 Console.WriteLine(tokenResponse.AccessToken);
 
 // call api
-var apiClient = new HttpClient();
+var apiHandler = new HttpClientHandler();
+apiHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
+apiHandler.ServerCertificateCustomValidationCallback = 
+    (httpRequestMessage, cert, cetChain, policyErrors) =>
+    {
+        return true;
+    };
+var apiClient = new HttpClient(apiHandler);
 apiClient.SetBearerToken(tokenResponse.AccessToken);
 
-var response = await apiClient.GetAsync("https://localhost:6001/identity");
+var response = await apiClient.GetAsync("https://localhost:6001/WeatherForecast/identity");
 if (!response.IsSuccessStatusCode)
 {
     Console.WriteLine(response.StatusCode);
